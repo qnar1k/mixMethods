@@ -2,10 +2,9 @@
 #include <string> 
 #include <vector>
 #include <stdexcept>
-#include <algorithm> // For transform function
+#include <algorithm> 
 
 using namespace std;
-
 
 class GeneralizedCaesarCipher {
 public:
