@@ -1,153 +1,105 @@
 #include <iostream>
+#include <string> 
 #include <vector>
 #include <stdexcept>
 #include <algorithm> // For transform function
 
 using namespace std;
 
-#define N 26
 
-class Cipher {
-private:
-    vector<char> arr1;
-    int key;
-    int effectiveKey;
-
+class GeneralizedCaesarCipher {
 public:
-    Cipher() : key(0), effectiveKey(0), arr1(N) {
-        for (int i = 0; i < N; i++) {
-            arr1[i] = 'a' + i; // Change to uppercase
+    string encrypt(const string& text, int shift) {
+        string encryptedText;
+        for (char c : text) {
+            char shifted = static_cast<char>((static_cast<unsigned char>(c) + shift) % 256);
+            encryptedText += shifted;
         }
+        return encryptedText;
     }
 
-    void setKey(int k) {
-        if (k < 0) {
-            throw invalid_argument("Key must be a non-negative integer.");
+    string decrypt(const string& text, int shift) {
+        string decryptedText;
+        for (char c : text) {
+            char shifted = static_cast<char>((static_cast<unsigned char>(c) - shift + 256) % 256);
+            decryptedText += shifted;
         }
-        key = k;
-        effectiveKey = key % N;
-    }
-
-    int getKey() const {
-        return key;
-    }
-
-    int getEffectiveKey() const {
-        return effectiveKey;
-    }
-
-    string encrypt(const string& word) {
-        string encryptedWord(word.length(), '\0');
-        for (size_t i = 0; i < word.length(); i++) {
-            for (int j = 0; j < N; j++) {
-                if (word[i] == arr1[j]) {
-                    encryptedWord[i] = arr1[(j + getEffectiveKey()) % N];
-                    break;
-                }
-            }
-        }
-        return encryptedWord;
-    }
-
-    string decrypt(const string& word) {
-        string decryptedWord(word.length(), '\0');
-        for (size_t i = 0; i < word.length(); i++) {
-            for (int j = 0; j < N; j++) {
-                if (word[i] == arr1[j]) {
-                    decryptedWord[i] = arr1[(j - getEffectiveKey() + N) % N];
-                    break;
-                }
-            }
-        }
-        return decryptedWord;
+        return decryptedText;
     }
 };
-
-class Program {
-public:
-    Program() {
-        generateText();
-        generateKey();
-    }
-    string Encrypt(const string&);
-    string Decrypt(const string&);
+class MatrixCipher {
 private:
-    vector<char> text;
-    void generateText();
-    vector<char> key;
-    void generateKey();
+    int rows;
+    int columns;
+    vector<vector<char>> matrix;
+
+public:
+    MatrixCipher(int rowSize, int colSize) : rows(rowSize), columns(colSize), matrix(rowSize, vector<char>(colSize, ' ')) {}
+
+    string encrypt(const string& text) {
+        matrix.resize(rows, vector<char>(columns, ' '));
+
+        for (int i = 0; i < text.length(); ++i) {
+            matrix[i / columns][i % columns] = text[i];
+        }
+
+        string encrypted;
+        for (int j = 0; j < columns; j++) {
+            for (int i = 0; i < rows; i++) {
+                if (matrix[i][j] != ' ') encrypted += matrix[i][j];
+            }
+        }
+        return encrypted;
+    }
+
+    string decrypt(const string& text) {
+
+        string decrypted;
+        for (int i = 0; i < rows; ++i) {
+            for (int j = 0; j < columns; ++j) {
+                decrypted += matrix[i][j];
+            }
+        }
+        return decrypted;
+    }
+
+    void printMatrix() const {
+        for (const auto& row : matrix) {
+            for (char c : row) {
+                cout << (c == ' ' ? '.' : c) << ' ';
+            }
+            cout << endl;
+        }
+    }
+
 };
-
-void Program::generateText() {
-    text.resize(26);
-    for (int i = 0; i < 26; i++) {
-        text[i] = 'a' + i;
-    }
-}
-
-void Program::generateKey() {
-    key.resize(26);
-    for (int i = 0; i < 26; i++) {
-        key[i] = 'z' - i;
-    }
-}
-
-string Program::Encrypt(const string& word) {
-    string encrypted;
-    for (char c : word) {
-        for (int j = 0; j < text.size(); j++) {
-            if (c == text[j]) {
-                encrypted += key[j];
-                break;
-            }
-        }
-    }
-    return encrypted;
-}
-
-string Program::Decrypt(const string& word) {
-    string decrypted;
-    for (char c : word) {
-        for (int j = 0; j < key.size(); j++) {
-            if (c == key[j]) {
-                decrypted += text[j];
-                break;
-            }
-        }
-    }
-    return decrypted;
-}
 
 int main() {
-    Cipher cipher;
-    Program prog;
-    cout << "Enter the key: ";
+    GeneralizedCaesarCipher cipher;
+
+    cout << "Enter the key for Caesar cipher: " << endl;
     int key;
     cin >> key;
+    string word;
+    cout << "Enter a word to encrypt: " << endl;
+    cin >> word;
+    int column; 
+    cout << "Enter the matrix size: " << endl;
+    cin >> column;
+    int row = (word.length() + column - 1) / column;
+    MatrixCipher prog(row, column);
 
-    try {
-        cipher.setKey(key);
+    string encryptedWord = cipher.encrypt(word,key);
+    cout << "Encrypted word (Cipher): " << encryptedWord << endl;
 
-        cout << "Enter a word to encrypt: ";
-        string word;
-        cin >> word;
+    string doubleEncryptedWord = prog.encrypt(encryptedWord);
+    cout << "Double Encrypted word (Program): " << doubleEncryptedWord << endl;
 
+    string decryptedWord = prog.decrypt(doubleEncryptedWord);
+    cout << "Decrypted word (Program): " << decryptedWord << endl;
 
-        string encryptedWord = cipher.encrypt(word);
-        cout << "Encrypted word (Cipher): " << encryptedWord << endl;
-
-        string doubleEncryptedWord = prog.Encrypt(encryptedWord);
-        cout << "Double Encrypted word (Program): " << doubleEncryptedWord << endl;
-
-        string decryptedWord = prog.Decrypt(doubleEncryptedWord);
-        cout << "Decrypted word (Program): " << decryptedWord << endl;
-
-        string finalDecryptedWord = cipher.decrypt(decryptedWord);
-        cout << "Finally Decrypted word (Cipher): " << finalDecryptedWord << endl;
-    }
-    catch (const invalid_argument& e) {
-        cerr << e.what() << endl;
-    }
+    string finalDecryptedWord = cipher.decrypt(decryptedWord, key);
+    cout << "Finally Decrypted word (Cipher): " << finalDecryptedWord << endl;
 
     return 0;
 }
